@@ -1,79 +1,95 @@
 package com.example.taskone;
 
-import android.annotation.SuppressLint;
-import android.content.Context;
-
 import java.util.Arrays;
+import java.util.Random;
 
 public class GameManager {
+    public static final int MAX_LIVES = 3,COLUMNS = 3,ROWS = 5;
+    public boolean[] lifes;
+    public boolean[][] activeIos;
+    private int lives = MAX_LIVES, AndroidIndex;
+    boolean isHit,finish;
 
-    @SuppressLint("StaticFieldLeak")
-
-    public static GameManager game;
-
-    private int lives = 3;
-    private boolean isLost = false;
-    private final Context context;
-
-    private GameManager(Context context) {
-        this.context = context;
+    public GameManager() {
+        AndroidIndex =1;
+        activeIos =new boolean[ROWS][COLUMNS];
+        initLives();
     }
-
-
-    public static void init(Context context) {
-        if (game == null) {
-            GameSignal.init(context);
-            game = new GameManager(context.getApplicationContext());
-        }
+    public void initLives(){
+        lifes=new boolean[MAX_LIVES];
+        Arrays.fill(lifes, true);
     }
-
-    public static GameManager getInstance() {
-        return game;
-    }
-
-    public int getLives() {
-        return lives;
-    }
-
-
-    public GameManager setLives(int lives) {
-        this.lives = lives;
-        return this;
-    }
-
-    public boolean isLost() {
-        return isLost;
-    }
-
-    public GameManager setLost(boolean lost) {
-        isLost = lost;
-        return this;
-    }
-
-    public void crash() {
+    public void reduceLives() {
         lives--;
-        if (lives == 0) {
-            setLost(true);
-        } else {
-            GameSignal.getInstance().toast("CRASHED\nYou have " + (lives > 1 ? lives + "lives" : "1 life") + " left");
+    }
+
+    public  int getROWS() {
+        return ROWS;
+    }
+
+    public  int getCOLUMNS() {
+        return COLUMNS;
+    }
+
+
+    public int getRandom(){
+        Random rand = new Random();
+        return rand.nextInt(COLUMNS);
+    }
+    public boolean isActive(int row,int col) {
+        return activeIos[row][col];
+    }
+    public void updateGame() {
+        for (int i = getROWS()-1; i >=0;i--){
+            for (int j = 0; j <getCOLUMNS();j++){
+                if( isActive(i,j) && i == getROWS()-1) {
+                    activeIos[i][j] = false;
+
+                    if (j == AndroidIndex) {
+                        isHit = true;
+                        if(lives==0){
+                            lives = MAX_LIVES; //update lives when over
+                        }
+                        reduceLives();
+                        lifes[lives] = false;
+                        if(!lifes[0]) { initLives();} // Update hearts
+
+                        //if (lives == 0)
+                        // finish = true;
+
+                    }
+                }
+                else if(i != getROWS()-1){
+                    activeIos[i+1][j]= activeIos[i][j];
+
+                }
+            }
         }
-        GameSignal.getInstance().vibrate();
-
+    }
+    public void updateNewIos(){
+        int col =getRandom();
+        for(int i = 0;i<getCOLUMNS();i++){
+            activeIos[0][i]= col == i;
+        }
+    }
+    public void update(){
+        updateGame();
+        updateNewIos();
     }
 
-    public void announceAsLost() {
-        GameSignal.getInstance().toast("You lost! Restarting...");
-        restart();
+    public void setHit(boolean hit) {
+        isHit = hit;
     }
 
-    private void restart() {
-        setLives(3);
-        setLost(false);
+    public boolean[] getLifes() {
+        return lifes;
     }
 
-    public void vibrate() {
-        GameSignal.getInstance().vibrate();
+    public boolean isFinish() {
+        return finish;
     }
 
-
+    public void setAndroidIndex(int androidIndex) {
+        this.AndroidIndex = androidIndex;
+    }
 }
